@@ -1,10 +1,11 @@
-import { Controller, Body, Get, Post, Res, StreamableFile, UploadedFile, UseInterceptors, BadRequestException, Param } from "@nestjs/common";
+import { Controller, Body, Get, Post, Res, StreamableFile, UploadedFile, UseInterceptors, BadRequestException, Param, Query } from "@nestjs/common";
 import { createReadStream } from "fs";
 import { join } from "path";
 import type { Response } from 'express';
 import { FileInterceptor } from "@nestjs/platform-express";
 import { FormGeneratorService } from "shared/form-generator.service";
-import { ApiParam, ApiBody } from "@nestjs/swagger";
+import { ApiParam, ApiBody, ApiProperty, ApiQuery, ApiOperation } from "@nestjs/swagger";
+import { SampleDataConfigDTO } from "shared/models/sample-data-config.dto";
 
 
 
@@ -39,35 +40,27 @@ export class FileController {
 
     // @UseInterceptors(FileInterceptor('pdf'))
     //@UseGuards(JwtAuthGuard)
-    @Post('generate-signed-samples/:pageCount') // Use @ApiParam for path parameters
-    @ApiParam({ name: 'pageCount', type: 'number' }) // Document path parameter
-    // @ApiBody({ type: SampleDataConfigDTO }) // Document request body if applicable
+    @Post('generate-signed-samples/:pageCount/:isTrustee1/isTrustee2/:isWitness/:isPolicyholder') // Use @ApiParam for path parameters
+
+    @ApiOperation({
+        summary: 'Generate a digital form of nomination with signature',
+        description: 'Generate signature. It Takes boolean as the parameter for the desired signature',
+      })
     async generateSignedSamples(
-        @Param('pageCount') pageCount: number, // Use the parameter type directly
-        @UploadedFile() file: Express.Multer.File,
-        @Body() sampleDataConfig: SampleDataConfigDTO,
+        @Query() sampleDataConfig: SampleDataConfigDTO,
         @Res({ passthrough: true }) res: Response
     ): Promise<any> {
         try {
             console.log(sampleDataConfig);
-            // jwt token contains invalid pstID for now
-            //const { pstID } = req.user;
-            const pstID = '811029999999';
-            const generateFilePath = await this.formGeneratorService.manualFormNonMuslimGenerator('../shared/pdf-samples/manual-form/manual_form_5.pdf', 5, 38, pageCount, 1) // 98
-            const file = createReadStream(generateFilePath)
-
+            const generateFilePath = await this.formGeneratorService.signedDigitalFormGenerator(sampleDataConfig.isTrustee1, sampleDataConfig.isTrustee2, sampleDataConfig.isWitness, sampleDataConfig.isPolicyholder,sampleDataConfig.rotationAngle, sampleDataConfig.scenarioNumber, sampleDataConfig.pageCount, 1) // 98
+            const file = createReadStream(generateFilePath.filePath)
 
             res.set({
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename="signature-page.pdf"',
+                'Content-Disposition': `attachment; filename=${generateFilePath.fileName}`,
             });
             return new StreamableFile(file);        } catch (error) {
             throw new BadRequestException();
         }
     }
-}
-
-export interface SampleDataConfigDTO {
-    pageCount: number
-
 }
