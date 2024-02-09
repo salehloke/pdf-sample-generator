@@ -2,9 +2,13 @@
   "name": "pdf-sample-generator",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "saleh",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salehloke/pdf-annotation.git"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
